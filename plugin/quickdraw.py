@@ -90,7 +90,8 @@ class QuickDraw:
         self.iface.addPluginToMenu(u"&Quick Draw", self.action)
 
         QObject.connect(self.dlg.clearButton, SIGNAL("clicked()"), self.clearButtonClicked)
-        self.dlg.buttonBox.clicked.connect(self.buttonBoxClicked)
+        self.dlg.buttonBox.button(QDialogButtonBox.Reset).clicked.connect(self.buttonBoxReset)
+        self.dlg.buttonBox.button(QDialogButtonBox.Apply).clicked.connect(self.buttonBoxApply)
         self.dlg.exampleComboBox.activated.connect(self.exampleSelected)
 
     def unload(self):
@@ -99,13 +100,12 @@ class QuickDraw:
         self.iface.removeToolBarIcon(self.action)
         self.removeItems()
 
-    def buttonBoxClicked(self, button):
-        button_text = str(button.text())
-        if button_text == 'Apply':
-            self.draw()
-            self.applied = True
-        elif button_text == 'Reset':
-            self.resetText()
+    def buttonBoxReset(self, button):
+        self.resetText()
+
+    def buttonBoxApply(self, button):
+        self.draw()
+        self.applied = True
 
     def clearButtonClicked(self):
         self.dlg.geometryTextEdit.setPlainText('')
