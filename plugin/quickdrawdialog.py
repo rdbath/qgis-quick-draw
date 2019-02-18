@@ -20,14 +20,15 @@
  ***************************************************************************/
 """
 
-from PyQt4 import QtCore, QtGui
-from ui_quickdraw import Ui_QuickDraw
+from qgis.PyQt import QtCore, QtGui
+from .ui_quickdraw import Ui_QuickDraw
+from qgis.PyQt.QtWidgets import QDialog
 # create the dialog for zoom to point
 
 
-class QuickDrawDialog(QtGui.QDialog, Ui_QuickDraw):
+class QuickDrawDialog(QDialog, Ui_QuickDraw):
     def __init__(self):
-        QtGui.QDialog.__init__(self)
+        QDialog.__init__(self)
         # Set up the user interface from Designer.
         # After setupUI you can access any designer object by doing
         # self.<objectname>, and you can use autoconnect slots - see

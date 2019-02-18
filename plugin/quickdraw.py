@@ -19,24 +19,31 @@
  *                                                                         *
  ***************************************************************************/
 """
+from __future__ import absolute_import
 # Import the PyQt and QGIS libraries
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from qgis.core import *
-from qgis.gui import *
+from builtins import zip
+from builtins import str
+from builtins import range
+from builtins import object
+from qgis.PyQt.QtCore import QSettings, QObject
+from qgis.PyQt.QtWidgets import QAction, QDialogButtonBox, QMessageBox
+from qgis.PyQt.QtGui import QIcon, QColor
+from qgis.core import QgsPointXY, QgsGeometry, QgsRectangle
+from qgis.gui import QgsVertexMarker, QgsRubberBand
 # Initialize Qt resources from file resources.py
-import resources_rc
+from . import resources_rc
 # Import the code for the dialog
-from quickdrawdialog import QuickDrawDialog
+from .quickdrawdialog import QuickDrawDialog
 import os.path
 
 from random import uniform
-from itertools import izip
+
 
 class QuickDrawError(Exception):
     def __init__(self, message, title):
         super(QuickDrawError, self).__init__(message)
         self.title = title
+        self.message=message
 
 class InvalidGeometry(QuickDrawError):
     def __init__(self, geom):
@@ -47,7 +54,7 @@ class InvalidGeometry(QuickDrawError):
         super(InvalidGeometry, self).__init__("The geometry formatting is wrong: %s" % msg, 'Invalid Geometry')
         self.geom = geom
 
-class QuickDraw:
+class QuickDraw(object):
 
     def __init__(self, iface):
         # Save reference to the QGIS interface
@@ -89,9 +96,11 @@ class QuickDraw:
         self.iface.addToolBarIcon(self.action)
         self.iface.addPluginToMenu(u"&Quick Draw", self.action)
 
-        QObject.connect(self.dlg.clearButton, SIGNAL("clicked()"), self.clearButtonClicked)
+        self.dlg.clearButton.clicked.connect(self.clearButtonClicked)
+        # self.dlg.buttonBox.clicked.connect(self.buttonBoxClicked)
         self.dlg.buttonBox.button(QDialogButtonBox.Reset).clicked.connect(self.buttonBoxReset)
         self.dlg.buttonBox.button(QDialogButtonBox.Apply).clicked.connect(self.buttonBoxApply)
+        
         self.dlg.exampleComboBox.activated.connect(self.exampleSelected)
 
     def unload(self):
@@ -99,13 +108,21 @@ class QuickDraw:
         self.iface.removePluginMenu(u"&Quick Draw", self.action)
         self.iface.removeToolBarIcon(self.action)
         self.removeItems()
-
+    
     def buttonBoxReset(self, button):
         self.resetText()
-
+    
     def buttonBoxApply(self, button):
         self.draw()
         self.applied = True
+    
+    # def buttonBoxClicked(self, button):
+        # button_text = str(button.text())
+        # if button_text == 'Apply':
+            # self.draw()
+            # self.applied = True
+        # elif button_text == 'Reset':
+            # self.resetText()
 
     def clearButtonClicked(self):
         self.dlg.geometryTextEdit.setPlainText('')
@@ -132,7 +149,7 @@ class QuickDraw:
             for i in range(3):
                 x.append(uniform(minx, maxx))
                 y.append(uniform(miny, maxy))
-            text = ','.join(('%s,%s' % t for t in izip(sorted(x), y)))
+            text = ','.join(('%s,%s' % t for t in zip(sorted(x), y)))
         else:                   # polygon
             x, y = [], []
             for i in range(4):
@@ -141,8 +158,7 @@ class QuickDraw:
             x.sort()
             x.append(x[0])
             y.append(y[0])
-            text = ','.join(('%s,%s' % t for t in izip(x, y)))
-
+            text = ','.join(('%s,%s' % t for t in zip(x, y)))
         self.dlg.geometryTextEdit.appendPlainText(text)
 
     def draw(self, checkZoom = True):
@@ -157,7 +173,7 @@ class QuickDraw:
                 r = self.geometryToCanvas(geom)
                 r.show()
                 drawStack.append(r)
-            except QuickDrawError, e:
+            except QuickDrawError as e:
                 message = e.message + "\n\nUse the QGIS \"What's This?\" help tool to click on the text input box for information on how to correctly format geometries."
                 QMessageBox.warning(self.dlg, e.title, message)
                 self.removeItems(drawStack) # remove added items
@@ -216,10 +232,10 @@ class QuickDraw:
         for item in self.drawStack[1:]:
             bbox = getBBOX(item)
             extent.combineExtentWith(bbox)
-
         if extent:
             canvas.setExtent(extent)
-            canvas.updateFullExtent()
+            #canvas.refresh()
+            #canvas.updateFullExtent()
 
     def removeItems(self, drawStack = None):
         if drawStack is None:
@@ -264,7 +280,7 @@ class QuickDraw:
         return toCoords(text)
 
     def coordsToPoints(self, coords):
-        return [QgsPoint(*coord) for coord in coords]
+        return [QgsPointXY(*coord) for coord in coords]
 
     def textToGeometry(self, text):
         coords = self.textToCoords(text)
@@ -275,12 +291,14 @@ class QuickDraw:
             return points[0]
         elif coord_count > 2 and coords[0] == coords[-1]:
             # it's a polygon
-            return QgsGeometry.fromPolygon([points])
+            return QgsGeometry.fromPolygonXY([points])
         
-        return QgsGeometry.fromPolyline(points)
+        #return QgsGeometry.fromPolyline(points)
+        # fromPolyline() now requires a list of QgsPoint objects, instead of QgsPointXY 2d points. A new method fromPolylineXY was added which uses the old list of 2d QgsPointXY objects. Using the newer method 
+        return QgsGeometry.fromPolylineXY(points)
 
     def geometryToCanvas(self, geom):
-        if isinstance(geom, QgsPoint):
+        if isinstance(geom, QgsPointXY):
             r = self.pointToVertexMarker(geom)
         else:
             r = self.geometryToRubberBand(geom)

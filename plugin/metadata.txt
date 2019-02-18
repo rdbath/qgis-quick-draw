@@ -10,7 +10,7 @@
 
 [general]
 name=Quick Draw
-qgisMinimumVersion=2.0
+qgisMinimumVersion=3.0
 description=Input simple geometries as text coordinates and display them on the map canvas.
 version=0.4
 author=Homme Zwaagstra
@@ -27,7 +27,7 @@ email=hrz@geodata.soton.ac.uk
 category=Vector
 
 # tags are comma separated with spaces allowed
-tags=geometry,geometries,point,polygon,polyline,bbox,bounding box,draw,canvas,digitizing,digitising
+tags=geometry,geometries,point,polygon,polyline,bbox,bounding box,draw,canvas
 
 homepage=http://www.github.com/geo-data/qgis-quick-draw
 tracker=http://www.github.com/geo-data/qgis-quick-draw/issues
